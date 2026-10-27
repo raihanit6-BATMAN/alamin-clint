@@ -1,0 +1,151 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0f1319;
+  --foreground: #ffffff;
+}
+
+body {
+  color: #0f1319;
+  background-color: #0f1319;
+  font-family: Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* Authentic Blacklane Glassmorphic Container */
+.blacklane-glass-card {
+  background-color: rgba(0, 0, 0, 0.2);
+  background-image: radial-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0) 90%),
+    radial-gradient(circle at 80% 200%, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0) 80%),
+    linear-gradient(rgba(15, 19, 25, 0.2), rgba(15, 19, 25, 0.2));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: rgba(6, 10, 13, 0.12) 0px 2px 8px 0px, rgba(0, 0, 0, 0.06) 4px 4px 8px 0px inset;
+  border-radius: 8px;
+}
+
+.blacklane-segmented-control {
+  background-color: rgba(0, 0, 0, 0.2);
+  background-image: radial-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0) 90%),
+    radial-gradient(circle at 80% 200%, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0) 80%),
+    linear-gradient(rgba(15, 19, 25, 0.2), rgba(15, 19, 25, 0.2));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: rgba(6, 10, 13, 0.12) 0px 2px 8px 0px, rgba(0, 0, 0, 0.06) 4px 4px 8px 0px inset;
+  border-radius: 999px;
+  padding: 4px;
+}
+
+/* Authentic Blacklane Floating Underline Field */
+.blacklane-underline-field {
+  box-shadow: rgb(255, 255, 255) 0px -1px 0px 0px inset;
+  transition: box-shadow 0.2s ease;
+}
+
+.blacklane-underline-field:focus-within {
+  box-shadow: #3E1DD1 0px -2px 0px 0px inset;
+}
+
+/* Hide scrollbars completely while preserving mouse wheel, trackpad and touch scroll */
+.scrollbar-none::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.scrollbar-none,
+.no-scrollbar {
+  -ms-overflow-style: none !important; /* IE and Edge */
+  scrollbar-width: none !important; /* Firefox */
+}
+
+/* Blacklane Blue Primary Button */
+.blacklane-btn-primary {
+  background-color: #0F63BD;
+  color: #ffffff;
+  border-radius: 999px;
+  font-family: Geist, -apple-system, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: 0.15px;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.blacklane-btn-primary:hover {
+  background-color: #0d529c;
+}
+
+.blacklane-btn-primary:active {
+  transform: scale(0.99);
+}
+
+/* Blacklane Outlined Button */
+.blacklane-btn-outlined {
+  border: 1px solid #0F63BD;
+  color: #0F63BD;
+  background-color: transparent;
+  border-radius: 999px;
+  font-family: Geist, -apple-system, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 4px 14px;
+  transition: all 0.15s ease;
+}
+
+.blacklane-btn-outlined:hover {
+  background-color: #0F63BD;
+  color: #ffffff;
+}
+
+/* Editorial Serif typography for luxury headings */
+.font-editorial {
+  font-family: "PP Fragment", "Playfair Display", -apple-system, Georgia, serif;
+}
+
+/* Lenis Smooth Scrolling Styles */
+html.lenis, html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
+/* Header Light Theme Dynamic Overrides */
+header.header-light {
+  background-color: #ffffff !important;
+  border-color: rgba(15, 19, 25, 0.08) !important;
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.05) !important;
+  backdrop-filter: none !important;
+}
+
+header.header-light a,
+header.header-light nav button,
+header.header-light nav a,
+header.header-light button:not(.blacklane-btn-primary),
+header.header-light span:not(.blacklane-btn-primary *),
+header.header-light svg:not(.blacklane-btn-primary *) {
+  color: #0f1319 !important;
+}
+
+header.header-light .header-signin-btn {
+  background-color: rgba(15, 19, 25, 0.06) !important;
+  border-color: rgba(15, 19, 25, 0.14) !important;
+  color: #0f1319 !important;
+}
+
+
