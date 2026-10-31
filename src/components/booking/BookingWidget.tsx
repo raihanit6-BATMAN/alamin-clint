@@ -14,6 +14,8 @@ import {
   ChevronRight,
   ArrowRight,
   X,
+  AlertCircle,
+  Phone,
 } from "lucide-react";
 import { ViewOptionsModal } from "@/components/ui/Modals";
 
@@ -141,6 +143,16 @@ export function BookingWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const [showOptionsModal, setShowOptionsModal] = useState(false);
 
+  // Contact & passenger fields
+  const [phone, setPhone] = useState("");
+  const [passengers, setPassengers] = useState(1);
+  const [notes, setNotes] = useState("");
+
+  // Validation / submission feedback state
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   // References for outside click dismissal
   const pickupRef = useRef<HTMLDivElement>(null);
   const dropoffRef = useRef<HTMLDivElement>(null);
@@ -224,10 +236,14 @@ export function BookingWidget() {
     setCalendarOpen(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoading) return;
+
     setIsLoading(true);
+    setErrors({});
+    setErrorMessage(null);
+    setSuccessMessage(null);
 
     // Close any open popovers cleanly
     setPickupOpen(false);
@@ -236,11 +252,50 @@ export function BookingWidget() {
     setCalendarOpen(false);
     setTimeOpen(false);
 
-    // Open options modal without locking DOM
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+      const day = String(selectedDate.getDate()).padStart(2, "0");
+      const pickupDateString = `${year}-${month}-${day} ${pickupTime}`;
+
+      const bookingPayload = {
+        phone: phone.trim(),
+        serviceType: mode === "transfer" ? "One way transfer" : `By the hour (${duration})`,
+        pickupLocation: pickup.trim(),
+        ...(mode === "transfer" && dropoff.trim() ? { dropoffLocation: dropoff.trim() } : {}),
+        pickupDate: pickupDateString,
+        passengers: Number(passengers) || 1,
+        ...(notes.trim() ? { notes: notes.trim() } : {}),
+      };
+
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(bookingPayload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.errors) {
+          setErrors(data.errors);
+        }
+        setErrorMessage(data.message || "Unable to complete booking. Please verify your details.");
+        return;
+      }
+
+      setErrors({});
+      setErrorMessage(null);
+      setSuccessMessage(data.message || "Booking confirmed!");
       setShowOptionsModal(true);
-    }, 150);
+    } catch (err) {
+      console.error("Booking submission error:", err);
+      setErrorMessage("An unexpected network error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -293,6 +348,51 @@ export function BookingWidget() {
         <div className="bg-neutral-900/60 backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl p-4 sm:p-5 lg:px-7 lg:py-5 text-white w-full transition-all duration-300">
           {/* Dynamic Input Grid: Cleanly stacked vertically on mobile, 4-col on desktop */}
           <form onSubmit={handleSubmit} className="w-full">
+            {/* Form-level Error Banner */}
+            {errorMessage && (
+              <div
+                role="alert"
+                className="mb-4 p-3 sm:p-3.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-200 text-xs sm:text-sm flex items-start gap-2.5 animate-in fade-in duration-200"
+              >
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <div className="flex-1 text-left">
+                  <p className="font-medium">{errorMessage}</p>
+                  {errors && Object.keys(errors).length > 0 && (
+                    <ul className="mt-1 list-disc list-inside space-y-0.5 text-xs text-red-300/90">
+                      {Object.entries(errors).map(([field, errList]) => (
+                        <li key={field}>
+                          <span className="capitalize font-medium">{field.replace(/([A-Z])/g, " $1")}:</span>{" "}
+                          {Array.isArray(errList) ? errList.join(", ") : String(errList)}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setErrorMessage(null);
+                    setErrors({});
+                  }}
+                  className="text-red-400 hover:text-white p-0.5 cursor-pointer"
+                  aria-label="Dismiss error"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Form-level Success Banner */}
+            {successMessage && (
+              <div
+                role="status"
+                className="mb-4 p-3 sm:p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-200 text-xs sm:text-sm flex items-center gap-2.5 animate-in fade-in duration-200"
+              >
+                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                <p className="font-medium flex-1 text-left">{successMessage}</p>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-x-5 lg:gap-x-6 gap-y-3.5 sm:gap-y-4 lg:gap-y-0 items-end">
               {/* Column 1: 'Pickup location' */}
               <div ref={pickupRef} className="col-span-1 lg:col-span-3 relative">
@@ -302,14 +402,22 @@ export function BookingWidget() {
                 >
                   Pickup location
                 </label>
-                <div className="blacklane-underline-field pb-1 flex items-center gap-2">
+                <div className={`blacklane-underline-field pb-1 flex items-center gap-2 ${errors.pickupLocation ? "border-b border-red-500" : ""}`}>
                   <MapPin className="w-4 h-4 text-white/40 shrink-0" />
                   <input
                     id="pickup-location-input"
+                    name="pickupLocation"
                     type="text"
                     value={pickup}
                     onChange={(e) => {
                       setPickup(e.target.value);
+                      if (errors.pickupLocation) {
+                        setErrors((prev) => {
+                          const updated = { ...prev };
+                          delete updated.pickupLocation;
+                          return updated;
+                        });
+                      }
                       if (!pickupOpen) setPickupOpen(true);
                     }}
                     onFocus={() => {
@@ -324,6 +432,9 @@ export function BookingWidget() {
                     autoComplete="off"
                   />
                 </div>
+                {errors.pickupLocation && (
+                  <p className="text-red-400 text-xs mt-1 text-left">{errors.pickupLocation[0]}</p>
+                )}
 
                 {/* Pickup Suggestions Popover: Mobile bottom-sheet / Desktop upward popover */}
                 {pickupOpen && (
@@ -401,14 +512,22 @@ export function BookingWidget() {
                   >
                     Drop-off location
                   </label>
-                  <div className="blacklane-underline-field pb-1 flex items-center gap-2">
+                  <div className={`blacklane-underline-field pb-1 flex items-center gap-2 ${errors.dropoffLocation ? "border-b border-red-500" : ""}`}>
                     <MapPin className="w-4 h-4 text-white/40 shrink-0" />
                     <input
                       id="dropoff-location-input"
+                      name="dropoffLocation"
                       type="text"
                       value={dropoff}
                       onChange={(e) => {
                         setDropoff(e.target.value);
+                        if (errors.dropoffLocation) {
+                          setErrors((prev) => {
+                            const updated = { ...prev };
+                            delete updated.dropoffLocation;
+                            return updated;
+                          });
+                        }
                         if (!dropoffOpen) setDropoffOpen(true);
                       }}
                       onFocus={() => {
@@ -423,6 +542,9 @@ export function BookingWidget() {
                       autoComplete="off"
                     />
                   </div>
+                  {errors.dropoffLocation && (
+                    <p className="text-red-400 text-xs mt-1 text-left">{errors.dropoffLocation[0]}</p>
+                  )}
 
                   {/* Drop-off Suggestions Popover: Mobile bottom-sheet / Desktop upward popover */}
                   {dropoffOpen && (
@@ -692,6 +814,9 @@ export function BookingWidget() {
                     </div>
                   </div>
                 )}
+                {errors.pickupDate && (
+                  <p className="text-red-400 text-xs mt-1 text-left">{errors.pickupDate[0]}</p>
+                )}
               </div>
 
               {/* Column 4: 'Pickup time' selector */}
@@ -786,7 +911,10 @@ export function BookingWidget() {
                   className="w-full h-12 min-h-[48px] lg:h-11 px-5 rounded-full bg-[#3E1DD1] hover:bg-[#4d2ce0] hover:scale-[1.02] active:scale-[0.98] text-white font-medium text-sm sm:text-base transition-all duration-150 whitespace-nowrap flex items-center justify-center gap-2 shadow-lg shadow-[#3E1DD1]/35 disabled:opacity-75 cursor-pointer"
                 >
                   {isLoading ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+                      <span className="whitespace-nowrap">Processing...</span>
+                    </>
                   ) : (
                     <>
                       <span className="whitespace-nowrap">View options</span>
@@ -794,6 +922,46 @@ export function BookingWidget() {
                     </>
                   )}
                 </button>
+              </div>
+            </div>
+
+            {/* Contact Phone for Chauffeur Dispatch */}
+            <div className="mt-4 pt-4 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="w-full sm:max-w-md">
+                <label
+                  htmlFor="phone-input"
+                  className="block text-xs uppercase tracking-wider text-white/60 font-medium mb-1 text-left"
+                >
+                  Contact phone number
+                </label>
+                <div className={`blacklane-underline-field pb-1 flex items-center gap-2 ${errors.phone ? "border-b border-red-500" : ""}`}>
+                  <Phone className="w-4 h-4 text-white/40 shrink-0" />
+                  <input
+                    id="phone-input"
+                    name="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      if (errors.phone) {
+                        setErrors((prev) => {
+                          const updated = { ...prev };
+                          delete updated.phone;
+                          return updated;
+                        });
+                      }
+                    }}
+                    placeholder="+64 21 555 0199 or (555) 000-0000"
+                    className="w-full bg-transparent text-white placeholder-white/40 text-sm sm:text-base leading-6 focus:outline-none"
+                    autoComplete="tel"
+                  />
+                </div>
+                {errors.phone && (
+                  <p className="text-red-400 text-xs mt-1 text-left">{errors.phone[0]}</p>
+                )}
+              </div>
+              <div className="text-xs text-white/50 sm:text-right hidden sm:block">
+                <span>Chauffeur dispatch & real-time trip coordination</span>
               </div>
             </div>
           </form>

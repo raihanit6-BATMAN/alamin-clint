@@ -1,3 +1,25 @@
-node_modules
-.next
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# next.js
+/.next/
+/out/
+/.turbo/
+AGENTS.md
+
+# local env files
 .env*.local
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
